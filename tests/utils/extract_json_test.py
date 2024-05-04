@@ -115,7 +115,7 @@ Note that there is only one job position mentioned in the resume, and it does no
     assert result == expected
 
 
-def test_extract_json_single_attribute():
+def test_extract_json_single_attribute_single_item():
     test_string = """
 raw output
 Based on the extracted annotation from the resume, I can extract the email address as follows:
@@ -138,7 +138,7 @@ clean output
 
     assert result == expected
 
-def test_extract_json_multiple_attributes():
+def test_extract_json_single_attributes_multiple_items():
     test_string = """
 Based on the extracted annotations from the resume, here are the skills mentioned:
 
