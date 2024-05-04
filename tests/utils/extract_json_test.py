@@ -137,3 +137,26 @@ clean output
     result = extract_json_only(test_string)
 
     assert result == expected
+
+def test_extract_json_multiple_attributes():
+    test_string = """
+Based on the extracted annotations from the resume, here are the skills mentioned:
+
+```
+[
+    {"name": "Bid management"},
+    {"name": "Sales support"},
+    {"name": "Requirement Analysis"},
+    {"name": "Test Planning"},
+    {"name": "Test execution"}
+]
+```
+"""
+
+    expected = [
+        """[\n    {"name": "Bid management"},\n    {"name": "Sales support"},\n    {"name": "Requirement Analysis"},\n    {"name": "Test Planning"},\n    {"name": "Test execution"}\n]"""
+    ]
+
+    result = extract_json_only(test_string)
+
+    assert result == expected
