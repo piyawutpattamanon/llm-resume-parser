@@ -113,7 +113,27 @@ Note that there is only one job position mentioned in the resume, and it does no
     result = extract_json_only(test_string)
 
     assert result == expected
-    
 
 
-# to run the test with pytest
+def test_extract_json_single_attribute():
+    test_string = """
+raw output
+Based on the extracted annotation from the resume, I can extract the email address as follows:
+
+```
+[
+    {"value": "indeed.com/r/Avin-Sharma/3ad8a8b57a172613"}
+]
+```
+
+Note that this is an unusual format for an email address, and it appears to be a link to a LinkedIn profile rather than a traditional email address. If you're looking for a traditional email address, I wouldn't be able to extract one from this resume.
+clean output
+    """
+
+    expected = [
+        """[\n    {"value": "indeed.com/r/Avin-Sharma/3ad8a8b57a172613"}\n]"""
+    ]
+
+    result = extract_json_only(test_string)
+
+    assert result == expected
