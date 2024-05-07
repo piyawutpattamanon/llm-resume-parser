@@ -10,13 +10,13 @@ from src.utils.extract_json import extract_json_only
 
 
 class Job(BaseModel):
-    title: str = Field(description="The title of the job position")
-    employee: str = Field(description="The company name of the job position")
-    # start_date: str = Field(description="The start date of the job position", default=None)
-    # end_date: str = Field(description="The end date of the job position", default=None)
-    # city: str = Field(description="The city of the job position", default=None)
-    # country: str = Field(description="The country of the job position", default=None)
-    # country_code: str = Field(description="The country code of the job position", default=None)
+    title: str|None = Field(description="The title of the job position")
+    employee: str|None = Field(description="The company name of the job position")
+    start_date: str|None = Field(description="The start date of the job position")
+    end_date: str|None = Field(description="The end date of the job position")
+    city: str|None = Field(description="The city of the job position", default=None)
+    country: str|None = Field(description="The country of the job position", default=None)
+    country_code: str|None = Field(description="The country code of the job position", default=None)
 
 
 class List_of_jobs(BaseModel):
