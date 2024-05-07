@@ -1,8 +1,6 @@
 import json
 from typing import List
-from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnableSequence
-from langchain_core.runnables.retry import RunnableRetry
-from langchain.prompts.chat import ChatPromptTemplate
+from langchain_core.runnables import RunnableParallel, RunnableLambda
 from langchain_core.runnables import RunnableConfig
 from langchain_text_splitters import TokenTextSplitter
 
@@ -80,16 +78,33 @@ class ResumeParserChain:
 
 
         def combine_chunk_results(raw):
+
             result = {}
 
+            info = {}
             for chunk_index in raw:
-                for k in raw[chunk_index]:
-                    if type(raw[chunk_index][k]) == dict:
-                        if k not in result:
-                            result[k] = {}
-                        result[k].update(raw[chunk_index][k])
+                for k in raw[chunk_index]['personal']:
+                    if raw[chunk_index]['personal'][k]:
+                        info[k] = raw[chunk_index]['personal'][k]
                     else:
-                        result[k] = raw[chunk_index][k]
+                        info[k] = info.get(k)
+            result['personal'] = info
+
+            info = []
+            for chunk_index in raw:
+                info += raw[chunk_index]['experience']
+            result['experience'] = info
+
+
+            info = []
+            for chunk_index in raw:
+                info += raw[chunk_index]['education']
+            result['education'] = info
+
+            info = []
+            for chunk_index in raw:
+                info += raw[chunk_index]['skills']
+            result['skills'] = info
 
             return result
 
@@ -116,7 +131,7 @@ if __name__ == '__main__':
     set_debug(True)
 
     resume_paser = ResumeParserChain(llm=llm)
-    result = resume_paser.parse(resumes[0]['content'])
+    result = resume_paser.parse(resumes[3]['content'])
 
     # print('=== raw result ===')
     # print(result)
