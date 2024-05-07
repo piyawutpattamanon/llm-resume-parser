@@ -18,6 +18,9 @@ class Person(BaseModel):
     marital_status: str|None = Field(description="The marital status of the person")
     country_code: str|None = Field(description="The country code of the person")
 
+class PersonalInfo(BaseModel):
+    personal: Person
+
 
 class PersonExtractor(Base):
     def __init__(self, llm):
@@ -28,7 +31,7 @@ class PersonExtractor(Base):
         return '{"error": "this is a fixed value"}'
     
     def get_prompt_template(self):
-        parser = PydanticOutputParser(pydantic_object=Person)
+        parser = PydanticOutputParser(pydantic_object=PersonalInfo)
 
         format_instructions = parser.get_format_instructions()
 

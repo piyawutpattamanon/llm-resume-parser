@@ -11,6 +11,12 @@ from src.chains.extractors.job_extractor import JobExtractor
 from src.chains.extractors.skill_extractor import SkillExtractor
 from src.chains.extractors.person_extractor import PersonExtractor
 
+class ChunkMapper:
+    def __init__(self, chunk_index: int):
+        self.chunk_index = chunk_index
+
+    def __call__(self, data) -> dict:
+        return {'resume_content':data['resume_chunks'][self.chunk_index]}
 
 class ResumeParserChain:
     def __init__(self, llm):
@@ -18,7 +24,7 @@ class ResumeParserChain:
         self.chain = None
 
     def split_chunks(self, resume_content) -> List[str]:
-        text_splitter = TokenTextSplitter(chunk_size=1500, chunk_overlap=500)
+        text_splitter = TokenTextSplitter(chunk_size=1300, chunk_overlap=300)
         chunks = text_splitter.split_text(resume_content)
 
         return chunks
@@ -54,28 +60,45 @@ class ResumeParserChain:
 
 
     def parse(self, resume_content):
-        chunks = self.split_chunks(resume_content)
+        resume_chunks = self.split_chunks(resume_content)
 
-        print('number of chunks', len(chunks))
+        print('number of chunks', len(resume_chunks))
         input('press to continue')
 
         single_chunk_chain = self.get_single_chunk_chain()
 
         combined_chain = RunnableParallel(
             {
-                f'chunk_{chunk_index}': single_chunk_chain
+                chunk_index: ChunkMapper(chunk_index) | single_chunk_chain
                 for chunk_index
-                in range(len(chunks))
+                in range(len(resume_chunks))
             }
         )
 
-        # def combine_chunks(src):
+
+                
 
 
+        def combine_chunk_results(raw):
+            result = {}
+
+            for chunk_index in raw:
+                for k in raw[chunk_index]:
+                    if type(raw[chunk_index][k]) == dict:
+                        if k not in result:
+                            result[k] = {}
+                        result[k].update(raw[chunk_index][k])
+                    else:
+                        result[k] = raw[chunk_index][k]
+
+            return result
+
+
+        combined_chain = combined_chain | RunnableLambda(combine_chunk_results)
         
 
         return combined_chain.invoke({
-            "resume_content": resume_content
+            "resume_chunks": resume_chunks
         })
     
 if __name__ == '__main__':
