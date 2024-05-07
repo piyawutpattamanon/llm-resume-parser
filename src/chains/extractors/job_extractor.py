@@ -18,8 +18,8 @@ class Job(BaseModel):
     country_code: str|None = Field(description="The country code of the job position", default=None)
 
 
-class JobList(BaseModel):
-    jobs: List[Job]
+class JobExperience(BaseModel):
+    experience: List[Job]
 
 
 
@@ -32,7 +32,7 @@ class JobExtractor(Base):
         return '{"error": "this is a fixed value"}'
     
     def get_prompt_template(self):
-        parser = PydanticOutputParser(pydantic_object=JobList)
+        parser = PydanticOutputParser(pydantic_object=JobExperience)
 
         format_instructions = parser.get_format_instructions()
 
@@ -64,7 +64,9 @@ below is the resume
             [RunnableLambda(self.get_fallback_value)]
         )
 
-        return safe_min
+        formatted_chain = safe_min | RunnableLambda(lambda result: result.dict())
+
+        return formatted_chain
 
 
     def get_chain(self):
@@ -104,10 +106,10 @@ if __name__ == '__main__':
 
     result = chain.invoke({'resume_content': resume_content})
 
-    # print('=== clean result ===')
-    # print(json.dumps(json.loads(result), indent=4))
-    print('=== raw result ===')
-    print(result)
+    print('=== clean result ===')
+    print(json.dumps(result, indent=4))
+    # print('=== raw result ===')
+    # print(result)
 
     end_time = datetime.datetime.now()
     print(f'Time taken: {end_time - start_time}')
