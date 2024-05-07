@@ -6,7 +6,6 @@ from langchain_core.runnables.retry import RunnableRetry
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.prompts import PromptTemplate
 from src.chains.extractors.base import Base
-from src.utils.extract_json import extract_json_only
 
 
 class Job(BaseModel):
@@ -19,7 +18,7 @@ class Job(BaseModel):
     country_code: str|None = Field(description="The country code of the job position", default=None)
 
 
-class List_of_jobs(BaseModel):
+class JobList(BaseModel):
     jobs: List[Job]
 
 
@@ -28,18 +27,12 @@ class JobExtractor(Base):
     def __init__(self, llm):
         self.llm = llm
         self.chain = None
-
-    # def validate(self, text):
-    #     result = extract_json_only(text)
-    #     if len(result) == 0:
-    #         raise ValueError("No job position found in the resume")
-    #     return result[0]
     
     def get_fallback_value(self, text):
         return '{"error": "this is a fixed value"}'
     
     def get_prompt_template(self):
-        parser = PydanticOutputParser(pydantic_object=List_of_jobs)
+        parser = PydanticOutputParser(pydantic_object=JobList)
 
         format_instructions = parser.get_format_instructions()
 
