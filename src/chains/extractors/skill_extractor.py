@@ -10,7 +10,7 @@ from src.chains.extractors.base import Base
 
 class Skill(BaseModel):
     name: str = Field(description="The name of the skill")
-    type: str = Field(description="The type of the skill (hard or soft)")
+    type: str|None = Field(description="The type of the skill (hard or soft)")
 
 
 class SkillSet(BaseModel):
@@ -53,13 +53,6 @@ if there is no skills in his resume, output a blank array like this
     def build_chain(self):
         minprompt = self.get_prompt_template()
 
-        safe_min = RunnableRetry(
-            bound=minprompt,
-            max_attempt_number=2,
-        ).with_fallbacks(
-            [RunnableLambda(self.get_fallback_value)]
-        )
-
         def formatting(item: SkillSet):
             formatted = {
                 'skills': [
@@ -71,7 +64,16 @@ if there is no skills in his resume, output a blank array like this
 
             return formatted
 
-        formatted_chain = safe_min | RunnableLambda(formatting)
+        safe_min = RunnableRetry(
+            bound=minprompt | RunnableLambda(formatting),
+            max_attempt_number=2,
+        ).with_fallbacks(
+            [RunnableLambda(self.get_fallback_value)]
+        )
+
+        
+
+        formatted_chain = safe_min
 
         return formatted_chain
 

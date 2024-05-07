@@ -29,7 +29,10 @@ class JobExtractor(Base):
         self.chain = None
     
     def get_fallback_value(self, text):
-        return '{"error": "this is a fixed value"}'
+        return {
+            "experience": [],
+            "experience_error": True,
+        }
     
     def get_prompt_template(self):
         parser = PydanticOutputParser(pydantic_object=JobExperience)
@@ -57,14 +60,16 @@ below is the resume
     def build_chain(self):
         minprompt = self.get_prompt_template()
 
+        formatter = RunnableLambda(lambda result: result.dict())
+
         safe_min = RunnableRetry(
-            bound=minprompt,
-            max_attempt_number=2,
+            bound=minprompt | formatter,
+            max_attempt_number=3,
         ).with_fallbacks(
             [RunnableLambda(self.get_fallback_value)]
         )
 
-        formatted_chain = safe_min | RunnableLambda(lambda result: result.dict())
+        formatted_chain = safe_min
 
         return formatted_chain
 

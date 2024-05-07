@@ -55,13 +55,13 @@ output in json. no explanation. no comment
         minprompt = self.get_prompt_template()
 
         safe_min = RunnableRetry(
-            bound=minprompt,
+            bound=minprompt | RunnableLambda(lambda result: result.dict()),
             max_attempt_number=2,
         ).with_fallbacks(
             [RunnableLambda(self.get_fallback_value)]
         )
 
-        formatted_chain = safe_min | RunnableLambda(lambda result: result.dict())
+        formatted_chain = safe_min
 
         return formatted_chain
 

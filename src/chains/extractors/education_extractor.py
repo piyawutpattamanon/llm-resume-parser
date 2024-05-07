@@ -30,7 +30,10 @@ class EducationExtractor(Base):
         self.chain = None
 
     def get_fallback_value(self, text):
-        return '{"error": "this is a fixed value"}'
+        return {
+            "education": [],
+            "education_error": True,
+        }
 
     def get_prompt_template(self):
         parser = PydanticOutputParser(pydantic_object=EducationExperience)
@@ -57,13 +60,13 @@ extract his education as specified in his resume.
         minprompt = self.get_prompt_template()
 
         safe_min = RunnableRetry(
-            bound=minprompt,
+            bound=minprompt  | RunnableLambda(lambda result: result.dict()),
             max_attempt_number=2,
         ).with_fallbacks(
             [RunnableLambda(self.get_fallback_value)]
         )
 
-        formatted_chain = safe_min | RunnableLambda(lambda result: result.dict())
+        formatted_chain = safe_min
 
         return formatted_chain
 
