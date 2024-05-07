@@ -59,7 +59,7 @@ class ResumeParserChain:
         return self.chain
 
 
-    def parse(self, resume_content):
+    async def parse(self, resume_content):
         resume_chunks = self.split_chunks(resume_content)
 
         # print('number of chunks', len(resume_chunks))
@@ -113,11 +113,14 @@ class ResumeParserChain:
 
         combined_chain = combined_chain | RunnableLambda(combine_chunk_results)
 
+        # from langchain.chains.graphviz import render_chain
+        # render_chain(combined_chain, "chain_diagram.png", vertical=True)
+
 
         config = RunnableConfig(max_concurrency=10)
         
 
-        return combined_chain.invoke(
+        return await combined_chain.ainvoke(
             {
                 "resume_chunks": resume_chunks,
             },
@@ -141,6 +144,13 @@ if __name__ == '__main__':
     model_name = 'llama-3-sonar-large-32k-online'
     pplx_llm = ChatPerplexity(temperature=0.1, model=model_name)
 
+    # from langchain.llms import PerplexityAI
+    # from langchain_community.llms import PerplexityAI
+    # pplx_llm = PerplexityAI(model=model_name, temperature=0.1)
+
+
+
+
 
     from langchain_anthropic import ChatAnthropic
     claude_llm = ChatAnthropic(
@@ -155,7 +165,15 @@ if __name__ == '__main__':
     set_debug(True)
 
     resume_paser = ResumeParserChain(llm=pplx_llm)
-    result = resume_paser.parse(resumes[102]['content'])
+
+    import asyncio
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(resume_paser.parse(resumes[102]['content']))
+
+    # Visualize the workflow
+    # import langchain_visualizer
+    # langchain_visualizer.visualize(resume_paser.parse, resume_content=resumes[102]['content'])
+    # result = resume_paser.parse(resumes[102]['content'])
 
     # print('=== raw result ===')
     # print(result)
