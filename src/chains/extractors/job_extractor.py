@@ -1,57 +1,71 @@
 import json
-from langchain_core.runnables import RunnableLambda, RunnableSequence
+from typing import List
+from pydantic import BaseModel, Field
+from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.retry import RunnableRetry
-from langchain.prompts.chat import ChatPromptTemplate
+from langchain.output_parsers import PydanticOutputParser
+from langchain_core.prompts import PromptTemplate
 from src.chains.extractors.base import Base
 from src.utils.extract_json import extract_json_only
+
+
+class Job(BaseModel):
+    title: str = Field(description="The title of the job position")
+    employee: str = Field(description="The company name of the job position")
+    # start_date: str = Field(description="The start date of the job position", default=None)
+    # end_date: str = Field(description="The end date of the job position", default=None)
+    # city: str = Field(description="The city of the job position", default=None)
+    # country: str = Field(description="The country of the job position", default=None)
+    # country_code: str = Field(description="The country code of the job position", default=None)
+
+
+class List_of_jobs(BaseModel):
+    jobs: List[Job]
+
+
+
 class JobExtractor(Base):
     def __init__(self, llm):
         self.llm = llm
         self.chain = None
 
-    def validate(self, text):
-        result = extract_json_only(text)
-        if len(result) == 0:
-            raise ValueError("No job position found in the resume")
-        return result[0]
+    # def validate(self, text):
+    #     result = extract_json_only(text)
+    #     if len(result) == 0:
+    #         raise ValueError("No job position found in the resume")
+    #     return result[0]
     
     def get_fallback_value(self, text):
         return '{"error": "this is a fixed value"}'
     
     def get_prompt_template(self):
+        parser = PydanticOutputParser(pydantic_object=List_of_jobs)
+
+        format_instructions = parser.get_format_instructions()
+
         prompt_text = """
-this is a job resume
+you're a resume parser.
+in his work experience, what are his job positions and these attributes related to the position: title, co, end_date, start_date, city, country_code.
+no more attributes other than this.
+
+{format_instructions}
+====
+below is the resume
 ====
 {resume_content}
-====
-in his work experience, what are his job positions and these attributes related to the position: title, employer, end_date, start_date, city, country_code.
-no more attributes other than this.
-output in json.
-
-example output
-[
-    {{
-      "city": "",
-      "job_title": "NCAT ASEC",
-      "country": "",
-      "company": "Hickman Property Holdings LLC",
-      "end_date": "2023-",
-      "start_date": "2022-2",
-      "country_code": "IN"
-    }}
-]
-
-
-if there is no job position in his resume. output a blank array like this
-[ ]"""
-        prompt = ChatPromptTemplate.from_template(prompt_text)
-        return prompt
+"""
+        prompt = PromptTemplate(
+            template=prompt_text,
+            input_variables=["resume_content"],
+            partial_variables={"format_instructions": format_instructions},
+        )
+        return prompt | self.llm | parser
 
     def build_chain(self):
         minprompt = self.get_prompt_template()
 
         safe_min = RunnableRetry(
-            bound=minprompt | self.llm | RunnableLambda(self.validate),
+            bound=minprompt,
             max_attempt_number=2,
         ).with_fallbacks(
             [RunnableLambda(self.get_fallback_value)]
@@ -97,8 +111,8 @@ if __name__ == '__main__':
 
     result = chain.invoke({'resume_content': resume_content})
 
-    print('=== clean result ===')
-    print(json.dumps(json.loads(result), indent=4))
+    # print('=== clean result ===')
+    # print(json.dumps(json.loads(result), indent=4))
     print('=== raw result ===')
     print(result)
 
