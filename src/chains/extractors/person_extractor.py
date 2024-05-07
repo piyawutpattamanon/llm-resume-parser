@@ -28,7 +28,10 @@ class PersonExtractor(Base):
         self.chain = None
     
     def get_fallback_value(self, text):
-        return '{"error": "this is a fixed value"}'
+        return {
+            'personal': {},
+            'personal_error': True
+        }
     
     def get_prompt_template(self):
         parser = PydanticOutputParser(pydantic_object=PersonalInfo)

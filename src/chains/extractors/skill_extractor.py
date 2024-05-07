@@ -23,7 +23,10 @@ class SkillExtractor(Base):
         self.chain = None
 
     def get_fallback_value(self, text):
-        return '{"error": "this is a fixed value"}'
+        return {
+            "skills": [],
+            "skills_error": True,
+        }
 
     def get_prompt_template(self):
         parser = PydanticOutputParser(pydantic_object=SkillSet)
