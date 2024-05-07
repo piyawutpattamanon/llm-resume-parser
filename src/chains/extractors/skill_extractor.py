@@ -4,7 +4,7 @@ from langchain_core.runnables.retry import RunnableRetry
 from langchain.prompts.chat import ChatPromptTemplate
 from src.chains.extractors.base import Base
 from src.utils.extract_json import extract_json_only
-class JobExtractor(Base):
+class SkillExtractor(Base):
     def __init__(self, llm):
         self.llm = llm
         self.chain = None
@@ -16,34 +16,27 @@ class JobExtractor(Base):
         return result[0]
     
     def get_fallback_value(self, text):
-        return '{"error": "this is a fixed value"}'
+        return "this is a fixed value"
     
     def get_prompt_template(self):
         prompt_text = """
-this is a job resume
-====
+this is a resume
+=====
 {resume_content}
-====
-in his work experience, what are his job positions and these attributes related to the position: title, employer, end_date, start_date, city, country_code.
-no more attributes other than this.
-output in json.
+=====
+you are resume parser.
+extract his skills as specified in his resume. both hard and soft skills.
+output in json
 
 example output
 [
-    {{
-      "city": "",
-      "job_title": "NCAT ASEC",
-      "country": "",
-      "company": "Hickman Property Holdings LLC",
-      "end_date": "2023-",
-      "start_date": "2022-2",
-      "country_code": "IN"
-    }}
+    {{"name": "Community Service", "type": "soft skill"}},
+    {{"name": "Concord", "type": "soft skill"}}
 ]
 
-
-if there is no job position in his resume. output a blank array like this
-[ ]"""
+if there is no skills in his resume, output a blank array like this
+[ ]
+"""
         prompt = ChatPromptTemplate.from_template(prompt_text)
         return prompt
 
@@ -79,28 +72,12 @@ if __name__ == '__main__':
     from langchain.globals import set_debug
     set_debug(True)
 
-    extractor = JobExtractor(llm=llm)
+    extractor = SkillExtractor(llm=llm)
     chain = extractor.get_chain()
 
-    
-
-    resume_content = resumes[102]['content']
-
-    from langchain.text_splitter import TokenTextSplitter
-    text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
-    chunks = text_splitter.split_text(resume_content)
-    print('number of tokens', len(chunks))
-
-    import datetime
-    start_time = datetime.datetime.now()
-
-
-    result = chain.invoke({'resume_content': resume_content})
+    result = chain.invoke({'resume_content': resumes[0]['content']})
 
     print('=== clean result ===')
     print(json.dumps(json.loads(result), indent=4))
     print('=== raw result ===')
     print(result)
-
-    end_time = datetime.datetime.now()
-    print(f'Time taken: {end_time - start_time}')

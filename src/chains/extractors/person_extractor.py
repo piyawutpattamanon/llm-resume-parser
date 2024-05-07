@@ -4,7 +4,7 @@ from langchain_core.runnables.retry import RunnableRetry
 from langchain.prompts.chat import ChatPromptTemplate
 from src.chains.extractors.base import Base
 from src.utils.extract_json import extract_json_only
-class JobExtractor(Base):
+class PersonExtractor(Base):
     def __init__(self, llm):
         self.llm = llm
         self.chain = None
@@ -20,30 +20,28 @@ class JobExtractor(Base):
     
     def get_prompt_template(self):
         prompt_text = """
-this is a job resume
-====
+this is a resume
+=====
 {resume_content}
-====
-in his work experience, what are his job positions and these attributes related to the position: title, employer, end_date, start_date, city, country_code.
-no more attributes other than this.
-output in json.
+=====
+what's the name of this person? what country he is from? is he married? should he be male or female?
+output in json. no explanation. no comment
 
 example output
 [
     {{
-      "city": "",
-      "job_title": "NCAT ASEC",
-      "country": "",
-      "company": "Hickman Property Holdings LLC",
-      "end_date": "2023-",
-      "start_date": "2022-2",
-      "country_code": "IN"
+        "gender": "",
+        "birthplace": "Thailand",
+        "first_name": "Hello",
+        "family_name": "World",
+        "middle_name": "",
+        "nationality": 'Thai',
+        "date_of_birth": "",
+        "marital_status": "",
+        "country_code": "TH"
     }}
 ]
-
-
-if there is no job position in his resume. output a blank array like this
-[ ]"""
+"""
         prompt = ChatPromptTemplate.from_template(prompt_text)
         return prompt
 
@@ -72,6 +70,10 @@ if __name__ == '__main__':
             resume = json.loads(line)
             resumes.append(resume)
 
+    import datetime
+
+    start_time = datetime.datetime.now()
+
     from src.llms.langchain_lmstudio import LMStudioLLM
 
     llm = LMStudioLLM(n=10)
@@ -79,23 +81,10 @@ if __name__ == '__main__':
     from langchain.globals import set_debug
     set_debug(True)
 
-    extractor = JobExtractor(llm=llm)
+    extractor = PersonExtractor(llm=llm)
     chain = extractor.get_chain()
 
-    
-
-    resume_content = resumes[102]['content']
-
-    from langchain.text_splitter import TokenTextSplitter
-    text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
-    chunks = text_splitter.split_text(resume_content)
-    print('number of tokens', len(chunks))
-
-    import datetime
-    start_time = datetime.datetime.now()
-
-
-    result = chain.invoke({'resume_content': resume_content})
+    result = chain.invoke({'resume_content': resumes[0]['content']})
 
     print('=== clean result ===')
     print(json.dumps(json.loads(result), indent=4))
