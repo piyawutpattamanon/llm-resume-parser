@@ -9,6 +9,8 @@ from src.chains.extractors.job_extractor import JobExtractor
 from src.chains.extractors.skill_extractor import SkillExtractor
 from src.chains.extractors.person_extractor import PersonExtractor
 
+
+
 class ChunkMapper:
     def __init__(self, chunk_index: int):
         self.chunk_index = chunk_index
@@ -22,7 +24,7 @@ class ResumeParserChain:
         self.chain = None
 
     def split_chunks(self, resume_content) -> List[str]:
-        text_splitter = TokenTextSplitter(chunk_size=1300, chunk_overlap=300)
+        text_splitter = TokenTextSplitter(chunk_size=10000, chunk_overlap=2000)
         chunks = text_splitter.split_text(resume_content)
 
         return chunks
@@ -60,8 +62,8 @@ class ResumeParserChain:
     def parse(self, resume_content):
         resume_chunks = self.split_chunks(resume_content)
 
-        print('number of chunks', len(resume_chunks))
-        input('press to continue')
+        # print('number of chunks', len(resume_chunks))
+        # input('press to continue')
 
         single_chunk_chain = self.get_single_chunk_chain()
 
@@ -110,11 +112,17 @@ class ResumeParserChain:
 
 
         combined_chain = combined_chain | RunnableLambda(combine_chunk_results)
+
+
+        config = RunnableConfig(max_concurrency=10)
         
 
-        return combined_chain.invoke({
-            "resume_chunks": resume_chunks
-        })
+        return combined_chain.invoke(
+            {
+                "resume_chunks": resume_chunks,
+            },
+            config = config
+        )
     
 if __name__ == '__main__':
     resumes = []
@@ -126,12 +134,28 @@ if __name__ == '__main__':
     from src.llms.langchain_lmstudio import LMStudioLLM
 
     llm = LMStudioLLM(n=10)
+    
+    from langchain_community.chat_models import ChatPerplexity
+    # model_name = 'llama-3-sonar-small-32k-online'
+    # model_name = 'pplx-70b-online'
+    model_name = 'llama-3-sonar-large-32k-online'
+    pplx_llm = ChatPerplexity(temperature=0.1, model=model_name)
+
+
+    from langchain_anthropic import ChatAnthropic
+    claude_llm = ChatAnthropic(
+        model="claude-3-haiku-20240307",
+        # model="claude-3-opus-20240229",
+        # model="claude-3-sonnet-20240229",
+        temperature=0.2,
+        # max_tokens=1024,
+    )
 
     from langchain.globals import set_debug
     set_debug(True)
 
-    resume_paser = ResumeParserChain(llm=llm)
-    result = resume_paser.parse(resumes[3]['content'])
+    resume_paser = ResumeParserChain(llm=pplx_llm)
+    result = resume_paser.parse(resumes[102]['content'])
 
     # print('=== raw result ===')
     # print(result)
