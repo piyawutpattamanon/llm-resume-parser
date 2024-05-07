@@ -11,13 +11,21 @@ from src.chains.extractors.base import Base
 class Education(BaseModel):
     city: str | None = Field(description="The city of the education", default=None)
     school: str | None = Field(description="The school name")
-    country: str | None = Field(description="The country of the education", default=None)
+    country: str | None = Field(
+        description="The country of the education", default=None
+    )
     end_date: str | None = Field(description="The end date of the education")
     start_date: str | None = Field(description="The start date of the education")
     degree_name: str | None = Field(description="The name of the degree", default=None)
-    description: str | None = Field(description="Additional description of the education", default=None)
-    country_code: str | None = Field(description="The country code of the education", default=None)
-    degree_major: str | None = Field(description="The major of the degree", default=None)
+    description: str | None = Field(
+        description="Additional description of the education", default=None
+    )
+    country_code: str | None = Field(
+        description="The country code of the education", default=None
+    )
+    degree_major: str | None = Field(
+        description="The major of the degree", default=None
+    )
 
 
 class EducationExperience(BaseModel):
@@ -60,11 +68,9 @@ extract his education as specified in his resume.
         minprompt = self.get_prompt_template()
 
         safe_min = RunnableRetry(
-            bound=minprompt  | RunnableLambda(lambda result: result.dict()),
+            bound=minprompt | RunnableLambda(lambda result: result.dict()),
             max_attempt_number=2,
-        ).with_fallbacks(
-            [RunnableLambda(self.get_fallback_value)]
-        )
+        ).with_fallbacks([RunnableLambda(self.get_fallback_value)])
 
         formatted_chain = safe_min
 
@@ -74,26 +80,3 @@ extract his education as specified in his resume.
         if self.chain is None:
             self.chain = self.build_chain()
         return self.chain
-
-
-if __name__ == '__main__':
-    resumes = []
-    with open('Entity Recognition in Resumes.jsonl') as f:
-        for line in f:
-            resume = json.loads(line)
-            resumes.append(resume)
-
-    from src.llms.langchain_lmstudio import LMStudioLLM
-
-    llm = LMStudioLLM(n=10)
-
-    from langchain.globals import set_debug
-    set_debug(True)
-
-    extractor = EducationExtractor(llm=llm)
-    chain = extractor.get_chain()
-
-    result = chain.invoke({'resume_content': resumes[0]['content']})
-
-    print('=== clean result ===')
-    print(json.dumps(result, indent=4))

@@ -10,7 +10,7 @@ from src.chains.extractors.base import Base
 
 class Skill(BaseModel):
     name: str = Field(description="The name of the skill")
-    type: str|None = Field(description="The type of the skill (hard or soft)")
+    type: str | None = Field(description="The type of the skill (hard or soft)")
 
 
 class SkillSet(BaseModel):
@@ -58,11 +58,7 @@ if there is no skills in his resume, output a blank array like this
 
         def formatting(item: SkillSet):
             formatted = {
-                'skills': [
-                    skill['name']
-                    for skill
-                    in item.model_dump()['skills']
-                ]
+                "skills": [skill["name"] for skill in item.model_dump()["skills"]]
             }
 
             return formatted
@@ -70,11 +66,7 @@ if there is no skills in his resume, output a blank array like this
         safe_min = RunnableRetry(
             bound=minprompt | RunnableLambda(formatting),
             max_attempt_number=2,
-        ).with_fallbacks(
-            [RunnableLambda(self.get_fallback_value)]
-        )
-
-        
+        ).with_fallbacks([RunnableLambda(self.get_fallback_value)])
 
         formatted_chain = safe_min
 
@@ -84,28 +76,3 @@ if there is no skills in his resume, output a blank array like this
         if self.chain is None:
             self.chain = self.build_chain()
         return self.chain
-
-
-if __name__ == '__main__':
-    resumes = []
-    with open('Entity Recognition in Resumes.jsonl') as f:
-        for line in f:
-            resume = json.loads(line)
-            resumes.append(resume)
-
-    from src.llms.langchain_lmstudio import LMStudioLLM
-
-    llm = LMStudioLLM(n=10)
-
-    from langchain.globals import set_debug
-    set_debug(True)
-
-    extractor = SkillExtractor(llm=llm)
-    chain = extractor.get_chain()
-
-    result = chain.invoke({'resume_content': resumes[0]['content']})
-
-    print('=== clean result ===')
-    print(json.dumps(result, indent=4))
-    print('=== raw result ===')
-    print(result)

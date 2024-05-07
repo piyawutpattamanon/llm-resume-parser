@@ -9,31 +9,34 @@ from src.chains.extractors.base import Base
 
 
 class Job(BaseModel):
-    title: str|None = Field(description="The title of the job position")
-    employee: str|None = Field(description="The company name of the job position")
-    start_date: str|None = Field(description="The start date of the job position")
-    end_date: str|None = Field(description="The end date of the job position")
-    city: str|None = Field(description="The city of the job position", default=None)
-    country: str|None = Field(description="The country of the job position", default=None)
-    country_code: str|None = Field(description="The country code of the job position", default=None)
+    title: str | None = Field(description="The title of the job position")
+    employee: str | None = Field(description="The company name of the job position")
+    start_date: str | None = Field(description="The start date of the job position")
+    end_date: str | None = Field(description="The end date of the job position")
+    city: str | None = Field(description="The city of the job position", default=None)
+    country: str | None = Field(
+        description="The country of the job position", default=None
+    )
+    country_code: str | None = Field(
+        description="The country code of the job position", default=None
+    )
 
 
 class JobExperience(BaseModel):
     experience: List[Job]
 
 
-
 class JobExtractor(Base):
     def __init__(self, llm):
         self.llm = llm
         self.chain = None
-    
+
     def get_fallback_value(self, text):
         return {
             "experience": [],
             "experience_error": True,
         }
-    
+
     def get_prompt_template(self):
         parser = PydanticOutputParser(pydantic_object=JobExperience)
 
@@ -65,56 +68,13 @@ below is the resume
         safe_min = RunnableRetry(
             bound=minprompt | formatter,
             max_attempt_number=3,
-        ).with_fallbacks(
-            [RunnableLambda(self.get_fallback_value)]
-        )
+        ).with_fallbacks([RunnableLambda(self.get_fallback_value)])
 
         formatted_chain = safe_min
 
         return formatted_chain
 
-
     def get_chain(self):
         if self.chain is None:
             self.chain = self.build_chain()
         return self.chain
-    
-if __name__ == '__main__':
-    resumes = []
-    with open('Entity Recognition in Resumes.jsonl') as f:
-        for line in f:
-            resume = json.loads(line)
-            resumes.append(resume)
-
-    from src.llms.langchain_lmstudio import LMStudioLLM
-
-    llm = LMStudioLLM(n=10)
-
-    from langchain.globals import set_debug
-    set_debug(True)
-
-    extractor = JobExtractor(llm=llm)
-    chain = extractor.get_chain()
-
-    
-
-    resume_content = resumes[102]['content']
-
-    from langchain.text_splitter import TokenTextSplitter
-    text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
-    chunks = text_splitter.split_text(resume_content)
-    print('number of tokens', len(chunks))
-
-    import datetime
-    start_time = datetime.datetime.now()
-
-
-    result = chain.invoke({'resume_content': resume_content})
-
-    print('=== clean result ===')
-    print(json.dumps(result, indent=4))
-    # print('=== raw result ===')
-    # print(result)
-
-    end_time = datetime.datetime.now()
-    print(f'Time taken: {end_time - start_time}')
