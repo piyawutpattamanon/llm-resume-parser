@@ -1,5 +1,5 @@
-import sys
-from src.utils.extract_json import extract_json_only 
+from src.utils.extract_json import extract_json_only
+
 
 def test_extract_json_inside_json():
     test_string = """
@@ -53,11 +53,10 @@ Note that the `Skills` section has multiple entries, each with a name and an opt
     expected = [
         '[\n        {\n            "name": "Bid management",\n            "description": ""\n        },\n        {\n            "name": "Sales support",\n            "description": ""\n        },\n        {\n            "name": "Requirement Analysis",\n            "description": "(Less than 1 year)"\n        },\n        {\n            "name": "Test Planning and Test execution",\n            "description": ""\n        }\n    ]',
         '[\n        {\n            "year": 2015,\n            "institute": "Great Lakes Institute of Management"\n        }\n    ]',
-        '[\n        {\n            "company": "Infosys Limited",\n            "designation": "Senior Associate Consultant"\n        }\n    ]'
+        '[\n        {\n            "company": "Infosys Limited",\n            "designation": "Senior Associate Consultant"\n        }\n    ]',
     ]
 
     result = extract_json_only(test_string)
-
 
     assert result == expected
 
@@ -87,7 +86,8 @@ Note that there is only one job position mentioned in the resume, and it does no
     result = extract_json_only(test_string)
 
     assert result == expected
-    
+
+
 def test_extract_json_empty_string():
     test_string = """
 Here are the extracted job positions along with their attributes:
@@ -130,13 +130,12 @@ Note that this is an unusual format for an email address, and it appears to be a
 clean output
     """
 
-    expected = [
-        """[\n    {"value": "indeed.com/r/Avin-Sharma/3ad8a8b57a172613"}\n]"""
-    ]
+    expected = ["""[\n    {"value": "indeed.com/r/Avin-Sharma/3ad8a8b57a172613"}\n]"""]
 
     result = extract_json_only(test_string)
 
     assert result == expected
+
 
 def test_extract_json_single_attributes_multiple_items():
     test_string = """
