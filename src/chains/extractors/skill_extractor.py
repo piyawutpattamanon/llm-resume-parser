@@ -58,7 +58,7 @@ if there is no skills in his resume, output a blank array like this
 
         def formatting(item: SkillSet):
             formatted = {
-                "skills": [skill["name"] for skill in item.model_dump()["skills"]]
+                "skills": [skill["name"] for skill in item.dict()["skills"]]
             }
 
             return formatted

@@ -10,7 +10,7 @@ from src.chains.extractors.base import Base
 
 class Job(BaseModel):
     title: str | None = Field(description="The title of the job position")
-    employee: str | None = Field(description="The company name of the job position")
+    employer: str | None = Field(description="The company name of the job position")
     start_date: str | None = Field(description="The start date of the job position")
     end_date: str | None = Field(description="The end date of the job position")
     city: str | None = Field(description="The city of the job position", default=None)
